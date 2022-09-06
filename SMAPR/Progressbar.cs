@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SMAPR
 {
-    class Progressbar
+    class ProgressBar
     {
         public enum Backup
         {
@@ -14,14 +14,14 @@ namespace SMAPR
             Failed
         }
 
-        private readonly int Length = Console.BufferWidth;
+        private readonly int Length = Console.BufferWidth - 2;
 
-        public long Total { get; set; }
-        public long Progress { get; set; }
+        public long Total { get; private set; }
+        private long Progress { get; set; }
         private Files Files { get; set; }
 
 
-        public Progressbar(long total)
+        public ProgressBar(long total)
         {
             Files = new();
             Total = total;
@@ -29,6 +29,9 @@ namespace SMAPR
 
         public void Update(FileInfo file, Backup status)
         {
+            Console.Clear();
+
+            Progress += file.Length;
             PrintProgressBar();
             PrintFileInfo(file);
             UpdateFiles(status);
@@ -72,8 +75,19 @@ namespace SMAPR
         private static void PrintFileInfo(FileInfo file)
         {
             Console.Write($"\nName: {file.Name}");
-            Console.Write($"\nPath: {file.FullName}");
+            Console.Write($"\nPath: {CapString(file.FullName, Console.BufferWidth-6)}");
             Console.Write($"\nSize: {GetFileSize(file)}");
+        }
+
+        private static string CapString(string longString, int length)
+        {
+            if (longString == null) return "";
+            
+            if(longString.Length <= length) return longString;
+
+            string cappedString = longString.Substring(0, length - 3);
+            cappedString += "...";
+            return cappedString;
         }
 
 
@@ -89,13 +103,15 @@ namespace SMAPR
             };
 
             long size = file.Length;
+            int fileSizeIndex = 0;
 
-            for (int i = 1; i < size || i < FileSizes.Length; i = 1024 ^ i)
+            for (int i = 1; i < size || i < FileSizes.Length; i = (int)Math.Pow(1024, fileSizeIndex))
             {
                 if(size / i < 1024)
                 {
-                    return $"{size / i} {FileSizes[i]}";
+                    return $"{size / i} {FileSizes[fileSizeIndex]}";
                 }
+                fileSizeIndex++;
             }
 
             return size.ToString();
@@ -103,11 +119,12 @@ namespace SMAPR
 
         public void Finish()
         {
+            Console.Clear();
             PrintProgressBar();
 
             Console.Write("\nBackup Finished");
             Console.Write($"\n\n{Files.Successful} Files backuped");
-            Console.Write($"\n{Files.Failed} Files failed");
+            Console.Write($"\n{Files.Failed} Files failed\n\n");
         }
     }
 }

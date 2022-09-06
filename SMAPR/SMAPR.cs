@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -17,11 +18,15 @@ namespace SMAPR
 
             if (File.Exists(source))
             {
-                BackupFile(new FileInfo(source), newBackupFolder);
+                FileInfo sourceFile = new FileInfo(source);
+                ProgressBar bar = new(sourceFile.Length);
+                BackupFile(sourceFile, newBackupFolder, bar);
             }
             else if (Directory.Exists(source))
             {
-                BackupDir(new DirectoryInfo(source), newBackupFolder);
+                DirectoryInfo sourcedir = new DirectoryInfo(source);
+                ProgressBar bar = new(DirSize(sourcedir));
+                BackupDir(sourcedir, newBackupFolder, bar);
             }
             else
             {
@@ -41,29 +46,38 @@ namespace SMAPR
         }
 
 
-        private static void BackupDir(DirectoryInfo dir, DirectoryInfo destinationDir)
+        private static void BackupDir(DirectoryInfo dir, DirectoryInfo destinationDir, ProgressBar bar)
         {
             destinationDir.Create();
 
-            BackupFiles(dir.GetFiles(), destinationDir);
+            BackupFiles(dir.GetFiles(), destinationDir, bar);
 
             foreach (DirectoryInfo subDir in dir.GetDirectories())
             {
-                BackupDir(subDir, new DirectoryInfo(Path.Combine(destinationDir.FullName, subDir.Name)));
+                BackupDir(subDir, new DirectoryInfo(Path.Combine(destinationDir.FullName, subDir.Name)), bar);
             }
         }
 
-        private static void BackupFiles(FileInfo[] files, DirectoryInfo destinationDir)
+        private static void BackupFiles(FileInfo[] files, DirectoryInfo destinationDir, ProgressBar bar)
         {
             foreach (FileInfo file in files)
             {
-                BackupFile(file, destinationDir);
+                BackupFile(file, destinationDir, bar);
             }
         }
 
-        private static void BackupFile(FileInfo file, DirectoryInfo destinationDir)
+        private static void BackupFile(FileInfo file, DirectoryInfo destinationDir, ProgressBar bar)
         {
-            File.Copy(file.FullName, Path.Combine(destinationDir.FullName, file.Name));
+            try
+            {
+                File.Copy(file.FullName, Path.Combine(destinationDir.FullName, file.Name));
+                bar.Update(file, ProgressBar.Backup.Successfull);
+            }
+            catch
+            {
+                bar.Update(file, ProgressBar.Backup.Failed);
+            }
+
         }
 
 
