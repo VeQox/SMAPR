@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,103 +10,81 @@ namespace SMAPR
     static class SMAPR
     {
         private const string NAS = @"\\192.168.0.22\public";
-        private static readonly string backupFolder = Path.Combine(NAS, "backup");
 
-        public static void Backup(string location)
+        public static void Backup(string source) 
         {
-            if(CreateFolderStructure(location, out DirectoryInfo newBackupFolder))
-            {
-                if (Directory.Exists(location))
-                    BackupDir(location, newBackupFolder.FullName);
+            DirectoryInfo newBackupFolder = CreateFolderStructure();
 
-                else if (File.Exists(location))
-                    CopyFile(location, newBackupFolder.FullName);
+            if (File.Exists(source))
+            {
+                BackupFile(new FileInfo(source), newBackupFolder);
+            }
+            else if (Directory.Exists(source))
+            {
+                BackupDir(new DirectoryInfo(source), newBackupFolder);
+            }
+            else
+            {
+                Console.WriteLine($"File not found {source}");
+                newBackupFolder.Delete(true);
             }
         }
 
-        public static bool CreateFolderStructure(string location, out DirectoryInfo newBackupFolder)
+
+        private static DirectoryInfo CreateFolderStructure()
         {
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type. bc its bs
-            newBackupFolder = default;
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
-
-            if (!File.Exists(location) && !Directory.Exists(location))
-                return false;
-
             DateTime now = DateTime.Now;
-            newBackupFolder = new(Path.Combine(backupFolder, $"{now.Day}.{now.Month}.{now.Year}_{now.Hour}-{now.Minute}-{now.Second}-{now.Millisecond}"));
-
-            return true;
+            string backupFolder = Path.Combine(NAS, "backup");
+            DirectoryInfo newBackupFolder = new(Path.Combine(backupFolder, $"{now.Day}.{now.Month}.{now.Year}_{now.Hour}-{now.Minute}-{now.Second}-{now.Millisecond}"));
+            newBackupFolder.Create();
+            return newBackupFolder;
         }
 
-        public static void BackupDir(string sourceDir, string destinationDir)
+
+        private static void BackupDir(DirectoryInfo dir, DirectoryInfo destinationDir)
         {
-            ProgressBar bar = new(DirSize(new DirectoryInfo(sourceDir)));
+            destinationDir.Create();
 
-            CopyDir(sourceDir, destinationDir, bar);
+            BackupFiles(dir.GetFiles(), destinationDir);
 
-            bar.Finish();
-        }
-
-        public static void CopyDir(string sourceDir, string destinationDir, ProgressBar bar)
-        {
-            DirectoryInfo dir = new(sourceDir);
-
-            DirectoryInfo[] dirs = dir.GetDirectories();
-
-            Directory.CreateDirectory(destinationDir);
-
-            bar.Update("", 0);
-
-            foreach (FileInfo file in dir.GetFiles())
+            foreach (DirectoryInfo subDir in dir.GetDirectories())
             {
-                string targetFilePath = Path.Combine(destinationDir, file.Name);
-                try
-                {
-                    file.CopyTo(targetFilePath);
-                    bar.successfullFiles.Add(file.Name);
-                    bar.Update(file.Name, file.Length);
-                }
-                catch
-                {
-                    bar.failedFiles.Add(file.Name);
-                    bar.Total -= file.Length;
-                }
-            }
-
-            foreach (DirectoryInfo subDir in dirs)
-            {
-                string newDestinationDir = Path.Combine(destinationDir, subDir.Name);
-                CopyDir(subDir.FullName, newDestinationDir, bar);
+                BackupDir(subDir, new DirectoryInfo(Path.Combine(destinationDir.FullName, subDir.Name)));
             }
         }
 
-        public static void CopyFile(string source, string destinationDir)
+        private static void BackupFiles(FileInfo[] files, DirectoryInfo destinationDir)
         {
-            File.Copy(source, destinationDir);
+            foreach (FileInfo file in files)
+            {
+                BackupFile(file, destinationDir);
+            }
         }
 
-        /// <summary>
-        /// https://stackoverflow.com/questions/468119/whats-the-best-way-to-calculate-the-size-of-a-directory-in-net
-        /// </summary>
-        /// <param name="d"></param>
-        /// <returns></returns>
-        public static long DirSize(DirectoryInfo d)
+        private static void BackupFile(FileInfo file, DirectoryInfo destinationDir)
+        {
+            File.Copy(file.FullName, Path.Combine(destinationDir.FullName, file.Name));
+        }
+
+
+        private static long DirSize(DirectoryInfo d)
+        {
+            return FileSizes(d.GetFiles());
+        }
+
+        private static long FileSizes(FileInfo[] files)
         {
             long size = 0;
-            // Add file sizes.
-            FileInfo[] fis = d.GetFiles();
-            foreach (FileInfo fi in fis)
+            foreach (FileInfo file in files)
             {
-                size += fi.Length;
-            }
-            // Add subdirectory sizes.
-            DirectoryInfo[] dis = d.GetDirectories();
-            foreach (DirectoryInfo di in dis)
-            {
-                size += DirSize(di);
+                size += FileSize(file);
             }
             return size;
+        }
+
+        private static long FileSize(FileInfo file)
+        {
+            return file.Length;
         }
     }
 }

@@ -6,37 +6,54 @@ using System.Threading.Tasks;
 
 namespace SMAPR
 {
-    class ProgressBar
+    class Progressbar
     {
-        private int Top { get; set; }
-        private int Length = 50;
-        public long Total { get; set; }
-        public long Progress { get; set; }
-
-        public List<string> successfullFiles = new();
-        public List<string> failedFiles = new();
-
-        public ProgressBar(long total)
+        public enum Backup
         {
-            Total = total;
-            Progress = 0;
-            Top = Console.CursorTop;
+            Successfull,
+            Failed
         }
 
-        public void Update(string fileName, long fileSize)
+        private readonly int Length = Console.BufferWidth;
+
+        public long Total { get; set; }
+        public long Progress { get; set; }
+        private Files Files { get; set; }
+
+
+        public Progressbar(long total)
         {
-            Console.Clear();
-            Console.SetCursorPosition(0, Top);
+            Files = new();
+            Total = total;
+        }
+
+        public void Update(FileInfo file, Backup status)
+        {
+            PrintProgressBar();
+            PrintFileInfo(file);
+            UpdateFiles(status);
+        }
+
+        private void UpdateFiles(Backup status)
+        {
+            if (status == Backup.Successfull)
+                Files.Successful++;
+            else if (status == Backup.Failed)
+                Files.Failed++;
+        }
+
+
+        private void PrintProgressBar()
+        {
+            // Amount of # in the ProgressBar
+            double mask = (double)Progress / Total * Length;
 
             Console.ForegroundColor = ConsoleColor.White;
             Console.Write("[");
 
-            Progress += fileSize;
-            double relativeLength = (double)Progress/Total*Length;
-
             for (int i = 0; i < Length; i++)
             {
-                if (i < relativeLength)
+                if (i < mask)
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.Write("#");
@@ -47,16 +64,50 @@ namespace SMAPR
                     Console.Write("-");
                 }
             }
-            Console.ForegroundColor= ConsoleColor.White;
-            Console.Write("]");
 
-            Console.Write($" {fileName,10} {Progress / 1024 / 1024}/{Total / 1024 / 1024} MiB");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write("]");
+        }
+
+        private static void PrintFileInfo(FileInfo file)
+        {
+            Console.Write($"\nName: {file.Name}");
+            Console.Write($"\nPath: {file.FullName}");
+            Console.Write($"\nSize: {GetFileSize(file)}");
+        }
+
+
+        private static string GetFileSize(FileInfo file)
+        {
+            string[] FileSizes =
+            {
+                "B",
+                "KB",
+                "MB",
+                "GB",
+                "TB",
+            };
+
+            long size = file.Length;
+
+            for (int i = 1; i < size || i < FileSizes.Length; i = 1024 ^ i)
+            {
+                if(size / i < 1024)
+                {
+                    return $"{size / i} {FileSizes[i]}";
+                }
+            }
+
+            return size.ToString();
         }
 
         public void Finish()
         {
-            Console.WriteLine($"{successfullFiles.Count} files moved successfully");
-            Console.WriteLine($"{failedFiles.Count} files failed");
+            PrintProgressBar();
+
+            Console.Write("\nBackup Finished");
+            Console.Write($"\n\n{Files.Successful} Files backuped");
+            Console.Write($"\n{Files.Failed} Files failed");
         }
     }
 }
