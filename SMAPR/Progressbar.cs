@@ -10,8 +10,11 @@ namespace SMAPR
     {
         private int Top { get; set; }
         private int Length = 50;
-        private long Total { get; set; }
-        private long Progress { get; set; }
+        public long Total { get; set; }
+        public long Progress { get; set; }
+
+        public List<string> successfullFiles = new();
+        public List<string> failedFiles = new();
 
         public ProgressBar(long total)
         {
@@ -52,8 +55,8 @@ namespace SMAPR
 
         public void Finish()
         {
-            Console.SetCursorPosition(0, Top + 2);
-            Console.WriteLine("All Files Moved");
+            Console.WriteLine($"{successfullFiles.Count} files moved successfully");
+            Console.WriteLine($"{failedFiles.Count} files failed");
         }
     }
 }

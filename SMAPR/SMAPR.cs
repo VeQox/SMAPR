@@ -60,8 +60,17 @@ namespace SMAPR
             foreach (FileInfo file in dir.GetFiles())
             {
                 string targetFilePath = Path.Combine(destinationDir, file.Name);
-                file.CopyTo(targetFilePath);
-                bar.Update(file.Name, file.Length);
+                try
+                {
+                    file.CopyTo(targetFilePath);
+                    bar.successfullFiles.Add(file.Name);
+                    bar.Update(file.Name, file.Length);
+                }
+                catch
+                {
+                    bar.failedFiles.Add(file.Name);
+                    bar.Total -= file.Length;
+                }
             }
 
             foreach (DirectoryInfo subDir in dirs)
