@@ -14,7 +14,7 @@ namespace SMAPR
             Failed
         }
 
-        private int Length { get { return Console.BufferWidth - 2; } }
+        private static int Length { get { return Console.BufferWidth - 2; } }
 
         public long Total { get; private set; }
         private long Progress { get; set; }
@@ -50,16 +50,16 @@ namespace SMAPR
         private void PrintProgressBar()
         {
             // Amount of # in the ProgressBar
-            int mask = (int)(Progress / Total * Length);
+            double mask = (double)Progress / Total * Length;
 
             Console.ForegroundColor = ConsoleColor.White;
             Console.Write("[");
 
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write(new string('#', mask));
+            Console.Write(new string('#', (int)mask));
 
             Console.ForegroundColor = ConsoleColor.White;
-            Console.Write($"{new string('-', Length - mask)}]\n");
+            Console.Write($"{new string('-', Length - (int)mask)}]\n");
         }
 
         private void PrintFileInfo(FileInfo file)
@@ -78,7 +78,7 @@ namespace SMAPR
             
             if(longString.Length <= length) return longString;
 
-            string cappedString = longString.Substring(0, length - 3);
+            string cappedString = longString[..(length - 3)];
             cappedString += "...";
             return cappedString;
         }

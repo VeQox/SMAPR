@@ -83,7 +83,7 @@ namespace SMAPR
 
         private static long DirSize(DirectoryInfo d)
         {
-            return FileSizes(d.GetFiles());
+            return FileSizes(d.GetFiles("*", new EnumerationOptions() { RecurseSubdirectories = true}));
         }
 
         private static long FileSizes(FileInfo[] files)
