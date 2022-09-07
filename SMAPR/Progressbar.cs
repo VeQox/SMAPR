@@ -14,7 +14,7 @@ namespace SMAPR
             Failed
         }
 
-        private readonly int Length = Console.BufferWidth - 2;
+        private int Length { get { return Console.BufferWidth - 2; } }
 
         public long Total { get; private set; }
         private long Progress { get; set; }
@@ -29,12 +29,13 @@ namespace SMAPR
 
         public void Update(FileInfo file, Backup status)
         {
+            UpdateFiles(status);
             Console.Clear();
 
             Progress += file.Length;
             PrintProgressBar();
             PrintFileInfo(file);
-            UpdateFiles(status);
+
         }
 
         private void UpdateFiles(Backup status)
@@ -49,34 +50,26 @@ namespace SMAPR
         private void PrintProgressBar()
         {
             // Amount of # in the ProgressBar
-            double mask = (double)Progress / Total * Length;
+            int mask = (int)(Progress / Total * Length);
 
             Console.ForegroundColor = ConsoleColor.White;
             Console.Write("[");
 
-            for (int i = 0; i < Length; i++)
-            {
-                if (i < mask)
-                {
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.Write("#");
-                }
-                else
-                {
-                    Console.ForegroundColor = ConsoleColor.White;
-                    Console.Write("-");
-                }
-            }
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write(new string('#', mask));
 
             Console.ForegroundColor = ConsoleColor.White;
-            Console.Write("]");
+            Console.Write($"{new string('-', Length - mask)}]\n");
         }
 
-        private static void PrintFileInfo(FileInfo file)
+        private void PrintFileInfo(FileInfo file)
         {
-            Console.Write($"\nName: {file.Name}");
-            Console.Write($"\nPath: {CapString(file.FullName, Console.BufferWidth-6)}");
-            Console.Write($"\nSize: {GetFileSize(file)}");
+            Console.WriteLine($"Name: {file.Name}");
+            Console.WriteLine($"Path: {CapString(file.FullName, Console.BufferWidth-6)}");
+            Console.WriteLine($"Size: {GetFileSize(file)}");
+
+            Console.WriteLine($"\n{Files.Successful} Files backuped");
+            Console.WriteLine($"{Files.Failed} Files failed");
         }
 
         private static string CapString(string longString, int length)
