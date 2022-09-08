@@ -2,3 +2,5 @@ SMAPR/bin/*
 SMAPR/obj/*
 SMAPR/.vs/*
 .vs/*
+/SMAPRTests/bin/Debug/net6.0
+/SMAPRTests/obj

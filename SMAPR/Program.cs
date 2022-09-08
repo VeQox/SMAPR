@@ -9,7 +9,7 @@ namespace SMAPR
         {
             Console.SetBufferSize(Console.BufferWidth, Console.WindowHeight);
 
-            string location = Path.Combine(Directory.GetCurrentDirectory(), "SmallFiles");
+            string location = Path.Combine(Directory.GetCurrentDirectory(), "ligma");
 
             SMAPR.Backup(location);
         }
