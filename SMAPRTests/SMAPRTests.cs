@@ -1,11 +1,4 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SMAPR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SMAPR.Tests
 {
@@ -36,7 +29,7 @@ namespace SMAPR.Tests
             CreateFiles(files);
 
             // Backup Files
-            SMAPR.Backup(SourceDir, BackupDir, false);
+            SMAPR.Backup.NewBackup(SourceDir.FullName, BackupDir.FullName, false);
 
             // Validate
             FileInfo[] sourceFiles = GetFiles(SourceDir);
@@ -73,7 +66,7 @@ namespace SMAPR.Tests
             CreateFiles(files);
 
             // Backup Files
-            SMAPR.Backup(SourceDir, BackupDir, false);
+            SMAPR.Backup.NewBackup(SourceDir.FullName, BackupDir.FullName, false);
 
             // Validate
             FileInfo[] sourceFiles = GetFiles(SourceDir);
@@ -110,7 +103,7 @@ namespace SMAPR.Tests
             CreateFiles(files);
 
             // Backup Files
-            SMAPR.Backup(SourceDir, BackupDir, false);
+            SMAPR.Backup.NewBackup(SourceDir.FullName, BackupDir.FullName, false);
 
             // Validate
             FileInfo[] sourceFiles = GetFiles(SourceDir);
@@ -156,7 +149,7 @@ namespace SMAPR.Tests
             CreateFiles(files);
 
             // Backup Files
-            SMAPR.Backup(SourceDir, BackupDir, false);
+            SMAPR.Backup.NewBackup(SourceDir.FullName, BackupDir.FullName, false);
 
             // Validate
             FileInfo[] sourceFiles = GetFiles(SourceDir);
@@ -202,7 +195,7 @@ namespace SMAPR.Tests
             CreateFiles(files);
 
             // Backup Files
-            SMAPR.Backup(SourceDir, BackupDir, false);
+            SMAPR.Backup.NewBackup(SourceDir.FullName, BackupDir.FullName, false);
 
             // Validate
             FileInfo[] sourceFiles = GetFiles(SourceDir);
@@ -235,7 +228,7 @@ namespace SMAPR.Tests
             }
 
             // Backup Files
-            SMAPR.Backup(SourceDir, BackupDir, false);
+            SMAPR.Backup.NewBackup(SourceDir.FullName, BackupDir.FullName, false);
 
             // Validate
             DirectoryInfo[] backupDirs = BackupDir.EnumerateDirectories().ToArray()[0].EnumerateDirectories().ToArray()[0].GetDirectories("*", new EnumerationOptions() { RecurseSubdirectories = true });
@@ -268,7 +261,7 @@ namespace SMAPR.Tests
             }
 
             // Backup Files
-            SMAPR.Backup(SourceDir, BackupDir, false);
+            SMAPR.Backup.NewBackup(SourceDir.FullName, BackupDir.FullName, false);
 
             // Validate
             DirectoryInfo[] backupDirs = BackupDir.EnumerateDirectories().ToArray()[0].EnumerateDirectories().ToArray()[0].GetDirectories("*", new EnumerationOptions() { RecurseSubdirectories = true });

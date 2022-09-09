@@ -1,7 +1,4 @@
-﻿using System;
-using System.Xml.Linq;
-
-namespace SMAPR
+﻿namespace SMAPR
 {
     public class Program
     {
@@ -9,9 +6,9 @@ namespace SMAPR
         {
             Console.SetBufferSize(Console.BufferWidth, Console.WindowHeight);
 
-            string location = Path.Combine(Directory.GetCurrentDirectory(), "ligma");
+            string location = Path.Combine(Directory.GetCurrentDirectory(), "hallo");
 
-            SMAPR.Backup(location);
+            SMAPR.Backup.NewBackup(location, @"\\192.168.0.22\public", true);
         }
     }
 }
