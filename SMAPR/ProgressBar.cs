@@ -5,7 +5,7 @@
         private static int Length { get { return Console.BufferWidth - 2; } }
         private char ProgressChar { get; }
         private char PlaceholderChar { get; }
-        private double Progress { get; set; }
+        protected double Progress { get; set; }
         private double Total { get; set; }
         private ConsoleColor ProgressColor { get; }
         private ConsoleColor PlaceholderColor { get; }
@@ -45,6 +45,8 @@
 
             Console.ForegroundColor = PlaceholderColor;
             Console.Write($"{new string(PlaceholderChar, Length - (int)mask)}]\n");
+
+            Console.ResetColor();
         }
     }
 }

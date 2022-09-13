@@ -2,146 +2,87 @@
 {
     public static class SMAPR
     {
-        public static class Copy
+        public static Analytics? Analytics;
+
+        private static void CopyDirectory(DirectoryInfo sourceDir, DirectoryInfo destinationDir, bool overwrite, bool recursive, bool analytics, bool threaded, string searchoption = "*")
         {
-            #region Copy Directory
-            public static int Directory(DirectoryInfo sourceDir, DirectoryInfo destinationDir, bool overwrite, string searchPattern = "*", bool recursive = true)
-            {
-                return Files(GetFiles(sourceDir, searchPattern, recursive), destinationDir, overwrite);
-            }
-            public static int Directory(string sourceDir, DirectoryInfo destinationDir, bool overwrite, string searchPattern = "*", bool recursive = true)
-            {
-                return Files(GetFiles(new DirectoryInfo(sourceDir), searchPattern, recursive), destinationDir, overwrite);
-            }
-            public static int Directory(DirectoryInfo sourceDir, string destinationDir, bool overwrite, string searchPattern = "*", bool recursive = true)
-            {
-                return Files(GetFiles(sourceDir, searchPattern, recursive), new DirectoryInfo(destinationDir), overwrite);
-            }
-            public static int Directory(string sourceDir, string destinationDir, bool overwrite, string searchPattern = "*", bool recursive = true)
-            {
-                return Files(GetFiles(new DirectoryInfo(sourceDir), searchPattern, recursive), new DirectoryInfo(destinationDir), overwrite);
-            }
-            #endregion
+            if (analytics) Analytics = new Analytics(DirSize(sourceDir), '#', '-', ConsoleColor.Green, ConsoleColor.White);
 
-            #region Copy Files
-            public static int Files(FileInfo[] sourceFiles, DirectoryInfo destinationDir, bool overwrite)
-            {
-                int count = 0;
+            DirectoryInfo[] subDirs = GetDirectories(sourceDir, recursive);
 
-                foreach (FileInfo file in sourceFiles)
-                {
-                    if (File(file, destinationDir, overwrite))
-                        count++;
-                }
+            foreach (DirectoryInfo subDir in subDirs)
+            {
+                string path = subDir.FullName.Replace(sourceDir.FullName, destinationDir.FullName);
+                DirectoryInfo destinationSubDir = new(path);
+                destinationSubDir.Create();
+            }
 
-                return count;
-            }
-            public static int Files(FileInfo[] sourceFiles, string destinationDir, bool overwrite)
-            {
-                return Files(sourceFiles, new DirectoryInfo(destinationDir), overwrite);
-            }
-            #endregion
-
-            #region Copy File
-            public static bool File(FileInfo sourceFile, DirectoryInfo destinationDir, bool overwrite)
-            {
-                try
-                {
-                    sourceFile.CopyTo(Path.Combine(destinationDir.FullName, sourceFile.Name), overwrite);
-                    return true;
-                }
-                catch
-                {
-                    return false;
-                }
-            }
-            public static bool File(string sourceFile, DirectoryInfo destinationDir, bool overwrite)
-            {
-                return File(new FileInfo(sourceFile), destinationDir, overwrite);
-            }
-            public static bool File(FileInfo sourceFile, string destinationDir, bool overwrite)
-            {
-                return File(sourceFile, new DirectoryInfo(destinationDir), overwrite);
-            }
-            public static bool File(string sourceFile, string destinationDir, bool overwrite)
-            {
-                return File(new FileInfo(sourceFile), new DirectoryInfo(destinationDir), overwrite);
-            }
-            #endregion
+            if (threaded) CopyFilesAsync(GetFiles(sourceDir, searchoption, recursive), destinationDir, overwrite);
+            else CopyFiles(GetFiles(sourceDir, searchoption, recursive), destinationDir, overwrite);
         }
-
-        public static class Sync
+        private static void CopyFiles(FileInfo[] files, DirectoryInfo destinationDir, bool overwrite)
         {
+            foreach(FileInfo file in files)
+            {
+                Analytics?.Update(file, CopyFile(file, destinationDir, overwrite));
+            }
 
+            Analytics?.Finish();
         }
-
-        public static class Backup
+        private static void CopyFilesAsync(FileInfo[] files, DirectoryInfo destinationDir, bool overwrite)
         {
-            private static Analytics? Analytics { get; set; }
+            Mutex countMutex = new();
+            Mutex updateMutex = new();
+            int count = 0;
 
-            public static void NewBackup(string source, string destination, bool analytics)
+            for (int i = 0; i < Environment.ProcessorCount; i++)
             {
-                DirectoryInfo backupFolder = CreateFolderStructure(destination);
+                Thread thread = new(() =>
+                {
+                    while (count < files.Length)
+                    {
+                        countMutex.WaitOne();
+                        int amount = count + 10 < files.Length ? 10 : files.Length - count;
+                        FileInfo[] l = files[count..(count+amount)];
+                        count += amount;
+                        countMutex.ReleaseMutex();
 
-                if (System.IO.File.Exists(source))
-                {
-                    File(new FileInfo(source), backupFolder);
-                }
-                else if (System.IO.Directory.Exists(source))
-                {
-                    DirectoryInfo sourceDir = new(source);
-                    if(analytics)Analytics = new(DirSize(sourceDir), '#', '-', ConsoleColor.Green, ConsoleColor.White);
-                    Directory(sourceDir, backupFolder);
-                }
-                else
-                {
-                    Console.WriteLine($"Source not found {source}");
-                    backupFolder.Delete(true);
-                }
+                        foreach (FileInfo file in l)
+                        {
+                            bool status = CopyFile(file, destinationDir, overwrite);
+
+                            updateMutex.WaitOne();
+                            Analytics?.Update(file, status);
+                            updateMutex.ReleaseMutex();
+                        }
+                    }
+
+                    Analytics?.Finish();
+                });
+
+                thread.Start();
             }
-
-            private static void Directory(DirectoryInfo dir, DirectoryInfo destinationDir)
+        }
+        private static bool CopyFile(FileInfo file, DirectoryInfo destinationDir, bool overwrite)
+        {
+            try
             {
-                destinationDir.Create();
-
-                Files(dir.GetFiles(), destinationDir);
-
-                foreach (DirectoryInfo subDir in dir.GetDirectories())
-                {
-                    subDir.Create();
-                    Directory(subDir, new DirectoryInfo(Path.Combine(destinationDir.FullName, subDir.Name)));
-                }
+                file.CopyTo(Path.Combine(destinationDir.FullName, file.Name), overwrite);
+                return true;
             }
-
-            private static void Files(FileInfo[] files, DirectoryInfo destinationDir)
+            catch
             {
-                foreach (FileInfo file in files)
-                {
-                    File(file, destinationDir);
-                }
-            }
-
-            private static void File(FileInfo file, DirectoryInfo destinationDir)
-            {
-                bool status = Copy.File(file, destinationDir, false);
-
-                Analytics?.Update(file, status);
-            }
-
-            private static DirectoryInfo CreateFolderStructure(string source)
-            {
-                DateTime now = DateTime.Now;
-                string backupFolder = Path.Combine(source, "backup");
-                DirectoryInfo newBackupFolder = new(Path.Combine(backupFolder, $"{now.Day}.{now.Month}.{now.Year}_{now.Hour}-{now.Minute}-{now.Second}-{now.Millisecond}"));
-                newBackupFolder.Create();
-                return newBackupFolder;
+                return false;
             }
         }
 
-        #region Functions
         private static FileInfo[] GetFiles(DirectoryInfo dir, string searchPattern, bool recursive)
         {
             return dir.GetFiles(searchPattern, new EnumerationOptions() { RecurseSubdirectories = recursive });
+        }
+        private static DirectoryInfo[] GetDirectories(DirectoryInfo dir, bool recursive)
+        {
+            return dir.GetDirectories("*", new EnumerationOptions() { RecurseSubdirectories = recursive });
         }
 
         private static long DirSize(DirectoryInfo dir)
@@ -155,12 +96,48 @@
             {
                 size += FileSize(file);
             }
-             return size;
+            return size;
         }
         private static long FileSize(FileInfo file)
         {
             return file.Length;
         }
-        #endregion
+
+        public static void Backup(string source, string destination, bool analytics, bool threaded)
+        {
+            DirectoryInfo backupFolder = CreateFolderStructure(destination);
+
+            if (File.Exists(source))
+            {
+                BackupFile(new FileInfo(source), backupFolder);
+            }
+            else if (Directory.Exists(source))
+            {
+                DirectoryInfo sourceDir = new(source);
+                BackupDir(sourceDir, backupFolder, analytics, threaded);
+            }
+            else
+            {
+                Console.WriteLine($"Source not found {source}");
+                backupFolder.Delete(true);
+            }
+        }
+        private static void BackupDir(DirectoryInfo sourceDir, DirectoryInfo destinationDir, bool analytics,  bool threaded)
+        {
+            CopyDirectory(sourceDir, destinationDir, false, true, analytics, threaded);
+        }
+        private static void BackupFile(FileInfo sourceFile, DirectoryInfo destinationDir)
+        {
+            CopyFile(sourceFile, destinationDir, false);
+        }
+
+        private static DirectoryInfo CreateFolderStructure(string source)
+        {
+            DateTime now = DateTime.Now;
+            string backupFolder = Path.Combine(source, "backup");
+            DirectoryInfo newBackupFolder = new(Path.Combine(backupFolder, $"{now.Day}.{now.Month}.{now.Year}_{now.Hour}-{now.Minute}-{now.Second}-{now.Millisecond}"));
+            newBackupFolder.Create();
+            return newBackupFolder;
+        }
     }
 }
