@@ -4,3 +4,4 @@ SMAPR/.vs/*
 .vs/*
 /SMAPRTests/bin/Debug/net6.0
 /SMAPRTests/obj
+/SMAPRTests/bin/Release/net6.0

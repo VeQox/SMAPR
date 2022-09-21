@@ -2,7 +2,7 @@
 {
     public class ProgressBar
     {
-        private static int Length { get { return Console.BufferWidth - 2; } }
+        private static int Length { get { return Console.BufferWidth; } }
         private char ProgressChar { get; }
         private char PlaceholderChar { get; }
         protected double Progress { get; set; }
@@ -34,8 +34,10 @@
 
         protected void PrintProgressBar()
         {
+            int length = Length - 2;
+
             // Amount of # in the ProgressBar
-            double mask = Progress / Total * Length;
+            double mask = Progress / Total * length;
 
             Console.ForegroundColor = PlaceholderColor;
             Console.Write("[");
@@ -44,7 +46,7 @@
             Console.Write(new string(ProgressChar, (int)mask));
 
             Console.ForegroundColor = PlaceholderColor;
-            Console.Write($"{new string(PlaceholderChar, Length - (int)mask)}]\n");
+            Console.Write($"{new string(PlaceholderChar, length - (int)mask)}]");
 
             Console.ResetColor();
         }

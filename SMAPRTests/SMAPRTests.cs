@@ -5,314 +5,310 @@ namespace SMAPR.Tests
     [TestClass()]
     public class SMAPRTests
     {
-        public const int Seed = 42069; // i know very mature
-        public readonly DirectoryInfo SourceDir = new(Path.Combine(Directory.GetCurrentDirectory(), "SourceDir"));
-        public readonly DirectoryInfo BackupDir = new(Path.Combine(Directory.GetCurrentDirectory(), "BackupDir"));
-        private const long MinimumFileSize = 2048;
-        private const long MaximumFileSize = 20480;
+        public const int Seed = 42069; // I know very mature
 
         [TestMethod()]
-        public void BackupDirManyFiles()
+        public void CopyDirManyFilesSync()
         {
-            // Create Directories
-            CreateDirectories();
+            const long min = 2048;
+            const long max = 2048 * 10;
 
-            // Create Files
-            int amount = 10;
-            FileInfo[] files = new FileInfo[amount];
+            DirectoryInfo sourceDir = new(Path.Combine(Directory.GetCurrentDirectory(), "source"));
+            DirectoryInfo destinationDir = new(Path.Combine(Directory.GetCurrentDirectory(), "source"));
 
-            for (int i = 0; i < files.Length; i++)
-            {
-                files[i] = new(Path.Combine(SourceDir.FullName, $"{i}.txt"));
-            }
+            ReCreateWorkingDir(sourceDir, destinationDir);
+            CreateFiles(100, sourceDir, min, max);
 
-            CreateFiles(files);
+            SMAPR.CopyDirectory(sourceDir, destinationDir, false, false, false, false);
 
-            // Backup Files
-            SMAPR.Backup(SourceDir.FullName, BackupDir.FullName, false, false);
+            var sourceFiles = GetFiles(sourceDir, false);
+            var destinationFiles = GetFiles(destinationDir, false);
 
-            // Validate
-            FileInfo[] sourceFiles = GetFiles(SourceDir);
-            FileInfo[] backupFiles = GetFiles(BackupDir);
-
-            if (sourceFiles.Length != backupFiles.Length)
-                Assert.Fail("SourceFiles and BackupFiles dont have the same Length");
-
-            for (int i = 0; i < sourceFiles.Length; i++)
-            {
-                if (sourceFiles[i].Length != backupFiles[i].Length)
-                    Assert.Fail($"Sourcefile[{i}] does not have the same size as Backupfile[{i}]");
-            }
-
-            // Delete Files
-            ClearDirectories();
+            Assert.IsTrue(CompareFiles(sourceFiles, destinationFiles));
         }
 
         [TestMethod()]
-        public void BackupDirOneFile()
+        public void CopyDirOneFileSync()
         {
-            // Create Directories
-            CreateDirectories();
+            const long min = 2048;
+            const long max = 2048 * 10;
 
-            // Create Files
-            int amount = 1;
-            FileInfo[] files = new FileInfo[amount];
+            DirectoryInfo sourceDir = new(Path.Combine(Directory.GetCurrentDirectory(), "source"));
+            DirectoryInfo destinationDir = new(Path.Combine(Directory.GetCurrentDirectory(), "source"));
 
-            for (int i = 0; i < files.Length; i++)
-            {
-                files[i] = new(Path.Combine(Directory.GetCurrentDirectory(), $"{i}.txt"));
-            }
+            ReCreateWorkingDir(sourceDir, destinationDir);
+            CreateFiles(1, sourceDir, min, max);
 
-            CreateFiles(files);
+            SMAPR.CopyDirectory(sourceDir, destinationDir, false, false, false, false);
 
-            // Backup Files
-            SMAPR.Backup(SourceDir.FullName, BackupDir.FullName, false, false);
+            var sourceFiles = GetFiles(sourceDir, false);
+            var destinationFiles = GetFiles(destinationDir, false);
 
-            // Validate
-            FileInfo[] sourceFiles = GetFiles(SourceDir);
-            FileInfo[] backupFiles = GetFiles(BackupDir);
-
-            if (sourceFiles.Length != backupFiles.Length)
-                Assert.Fail("SourceFiles and BackupFiles dont have the same Length");
-
-            for (int i = 0; i < sourceFiles.Length; i++)
-            {
-                if (sourceFiles[i].Length != backupFiles[i].Length)
-                    Assert.Fail($"Sourcefile[{i}] does not have the same size as Backupfile[{i}]");
-            }
-
-            // Delete Files
-            ClearDirectories();
+            Assert.IsTrue(CompareFiles(sourceFiles, destinationFiles));
         }
 
         [TestMethod()]
-        public void BackupEmptyDir()
+        public void CopySubDirManyFilesSync()
         {
-            // Create Directories
-            CreateDirectories();
+            const long min = 2048;
+            const long max = 2048 * 10;
 
-            // Create Files
-            int amount = 0;
-            FileInfo[] files = new FileInfo[amount];
+            DirectoryInfo sourceDir = new(Path.Combine(Directory.GetCurrentDirectory(), "source"));
+            DirectoryInfo destinationDir = new(Path.Combine(Directory.GetCurrentDirectory(), "source"));
 
-            for (int i = 0; i < files.Length; i++)
-            {
-                files[i] = new(Path.Combine(SourceDir.FullName, $"{i}.txt"));
-            }
+            ReCreateWorkingDir(sourceDir, destinationDir);
+            DirectoryInfo subDir = sourceDir.CreateSubdirectory("subDir");
 
-            CreateFiles(files);
+            CreateFiles(100, subDir, min, max);
 
-            // Backup Files
-            SMAPR.Backup(SourceDir.FullName, BackupDir.FullName, false, false);
+            SMAPR.CopyDirectory(sourceDir, destinationDir, false, false, true, false);
 
-            // Validate
-            FileInfo[] sourceFiles = GetFiles(SourceDir);
-            FileInfo[] backupFiles = GetFiles(BackupDir);
+            var sourceFiles = GetFiles(sourceDir, true);
+            var destinationFiles = GetFiles(destinationDir, true);
 
-            if (sourceFiles.Length != backupFiles.Length)
-                Assert.Fail("SourceFiles and BackupFiles dont have the same Length");
-
-            for (int i = 0; i < sourceFiles.Length; i++)
-            {
-                if (sourceFiles[i].Length != backupFiles[i].Length)
-                    Assert.Fail($"Sourcefile[{i}] does not have the same size as Backupfile[{i}]");
-            }
-
-            // Delete Files
-            ClearDirectories();
+            Assert.IsTrue(CompareFiles(sourceFiles, destinationFiles));
         }
 
         [TestMethod()]
-        public void BackupEmptyDirWithSubDir()
+        public void CopySubDirsManyFilesSync()
         {
-            // Create Directories
-            CreateDirectories();
+            const long min = 2048;
+            const long max = 2048 * 10;
 
-            // Create Files
-            int amount = 0;
-            int subDirAmount = 1;
-            int amountInSubDir = 10;
-            FileInfo[] files = new FileInfo[amount];
+            DirectoryInfo sourceDir = new(Path.Combine(Directory.GetCurrentDirectory(), "source"));
+            DirectoryInfo destinationDir = new(Path.Combine(Directory.GetCurrentDirectory(), "source"));
 
-            for (int i = 0; i < files.Length; i++)
-            {
-                for(int j = 0; j < subDirAmount; j++)
-                {
-                    for (int k = 0; k < amountInSubDir; k++)
-                    {
-                        files[i] = new(Path.Combine(SourceDir.FullName,$"{j}", $"{k}.txt"));
-                    }
-                }
-                files[i] = new(Path.Combine(SourceDir.FullName, $"{i}.txt"));
-            }
+            ReCreateWorkingDir(sourceDir, destinationDir);
+            DirectoryInfo subDir = sourceDir.CreateSubdirectory("subDir");
 
-            CreateFiles(files);
+            CreateFiles(100, sourceDir, min, max);
+            CreateFiles(100, subDir, min, max);
 
-            // Backup Files
-            SMAPR.Backup(SourceDir.FullName, BackupDir.FullName, false, false);
+            SMAPR.CopyDirectory(sourceDir, destinationDir, false, false, true, false);
 
-            // Validate
-            FileInfo[] sourceFiles = GetFiles(SourceDir);
-            FileInfo[] backupFiles = GetFiles(BackupDir);
+            var sourceFiles = GetFiles(sourceDir, true);
+            var destinationFiles = GetFiles(destinationDir, true);
 
-            if (sourceFiles.Length != backupFiles.Length)
-                Assert.Fail("SourceFiles and BackupFiles dont have the same Length");
-
-            for (int i = 0; i < sourceFiles.Length; i++)
-            {
-                if (sourceFiles[i].Length != backupFiles[i].Length)
-                    Assert.Fail($"Sourcefile[{i}] does not have the same size as Backupfile[{i}]");
-            }
-
-            // Delete Files
-            ClearDirectories();
+            Assert.IsTrue(CompareFiles(sourceFiles, destinationFiles));
         }
 
         [TestMethod()]
-        public void BackupEmptyDirWithSubDirs()
+        public void CopyEmptySubDirsSync()
         {
-            // Create Directories
-            CreateDirectories();
+            DirectoryInfo sourceDir = new(Path.Combine(Directory.GetCurrentDirectory(), "source"));
+            DirectoryInfo destinationDir = new(Path.Combine(Directory.GetCurrentDirectory(), "source"));
 
-            // Create Files
-            int amount = 0;
-            int subDirAmount = 10;
-            int amountInSubDir = 10;
-            FileInfo[] files = new FileInfo[amount];
-
-            for (int i = 0; i < files.Length; i++)
-            {
-                for (int j = 0; j < subDirAmount; j++)
-                {
-                    for (int k = 0; k < amountInSubDir; k++)
-                    {
-                        files[i] = new(Path.Combine(SourceDir.FullName, $"{j}", $"{k}.txt"));
-                    }
-                }
-                files[i] = new(Path.Combine(SourceDir.FullName, $"{i}.txt"));
-            }
-
-            CreateFiles(files);
-
-            // Backup Files
-            SMAPR.Backup(SourceDir.FullName, BackupDir.FullName, false, false);
-
-            // Validate
-            FileInfo[] sourceFiles = GetFiles(SourceDir);
-            FileInfo[] backupFiles = GetFiles(BackupDir);
-
-            if (sourceFiles.Length != backupFiles.Length)
-                Assert.Fail("SourceFiles and BackupFiles dont have the same Length");
-
-            for (int i = 0; i < sourceFiles.Length; i++)
-            {
-                if (sourceFiles[i].Length != backupFiles[i].Length)
-                    Assert.Fail($"Sourcefile[{i}] does not have the same size as Backupfile[{i}]");
-            }
-
-            // Delete Files
-            ClearDirectories();
-        }
-        
-        [TestMethod()]
-        public void BackupEmptyDirWithEmptySubDir()
-        {
-            // Create Directories
-            CreateDirectories();
-
-            int subDirs = 1;
-
-            for (int i = 0; i < subDirs; i++)
-            {
-                SourceDir.CreateSubdirectory($"{i}");
-            }
-
-            // Backup Files
-            SMAPR.Backup(SourceDir.FullName, BackupDir.FullName, false, false);
-
-            // Validate
-            DirectoryInfo[] backupDirs = BackupDir.EnumerateDirectories().ToArray()[0].EnumerateDirectories().ToArray()[0].GetDirectories("*", new EnumerationOptions() { RecurseSubdirectories = true });
-            DirectoryInfo[] sourceDirs = SourceDir.GetDirectories();
+            ReCreateWorkingDir(sourceDir, destinationDir);
+            for (int i = 0; i < 10; i++)
+                sourceDir.CreateSubdirectory($"subDir {i}");
             
-            if(backupDirs.Length != sourceDirs.Length)
-                Assert.Fail("SourceDirs and BackupDirs dont have the same Length");
+            SMAPR.CopyDirectory(sourceDir, destinationDir, false, false, true, false);
 
-            for(int i = 0; i < backupDirs.Length; i++)
-            {
-                if (backupDirs[i].Name != sourceDirs[i].Name)
-                    Assert.Fail($"SourceDirs[{i}] does not have the same size as BackupDirs[{i}]");
-            }
+            var sourceFiles = GetDirectories(sourceDir, true);
+            var destinationFiles = GetDirectories(destinationDir, true);
 
-            // Delete Directories
-            ClearDirectories();
+            Assert.IsTrue(CompareDirs(sourceFiles, destinationFiles));
         }
 
         [TestMethod()]
-        public void BackupEmptyDirWithEmptySubDirs()
+        public void CopyDirManyFilesThreaded()
         {
-            // Create Directories
-            CreateDirectories();
+            const long min = 2048;
+            const long max = 2048 * 10;
 
-            int subDirs = 10;
+            DirectoryInfo sourceDir = new(Path.Combine(Directory.GetCurrentDirectory(), "source"));
+            DirectoryInfo destinationDir = new(Path.Combine(Directory.GetCurrentDirectory(), "source"));
 
-            for (int i = 0; i < subDirs; i++)
+            ReCreateWorkingDir(sourceDir, destinationDir);
+            CreateFiles(100, sourceDir, min, max);
+
+            SMAPR.CopyDirectory(sourceDir, destinationDir, false, false, false, true);
+
+            var sourceFiles = GetFiles(sourceDir, false);
+            var destinationFiles = GetFiles(destinationDir, false);
+
+            Assert.IsTrue(CompareFiles(sourceFiles, destinationFiles));
+        }
+
+        [TestMethod()]
+        public void CopyDirOneFileThreaded()
+        {
+            const long min = 2048;
+            const long max = 2048 * 10;
+
+            DirectoryInfo sourceDir = new(Path.Combine(Directory.GetCurrentDirectory(), "source"));
+            DirectoryInfo destinationDir = new(Path.Combine(Directory.GetCurrentDirectory(), "source"));
+
+            ReCreateWorkingDir(sourceDir, destinationDir);
+            CreateFiles(1, sourceDir, min, max);
+
+            SMAPR.CopyDirectory(sourceDir, destinationDir, false, false, false, true);
+
+            var sourceFiles = GetFiles(sourceDir, false);
+            var destinationFiles = GetFiles(destinationDir, false);
+
+            Assert.IsTrue(CompareFiles(sourceFiles, destinationFiles));
+        }
+
+        [TestMethod()]
+        public void CopySubDirManyFilesThreaded()
+        {
+            const long min = 2048;
+            const long max = 2048 * 10;
+
+            DirectoryInfo sourceDir = new(Path.Combine(Directory.GetCurrentDirectory(), "source"));
+            DirectoryInfo destinationDir = new(Path.Combine(Directory.GetCurrentDirectory(), "source"));
+
+            ReCreateWorkingDir(sourceDir, destinationDir);
+            DirectoryInfo subDir = sourceDir.CreateSubdirectory("subDir");
+
+            CreateFiles(100, subDir, min, max);
+
+            SMAPR.CopyDirectory(sourceDir, destinationDir, false, false, true, true);
+
+            var sourceFiles = GetFiles(sourceDir, true);
+            var destinationFiles = GetFiles(destinationDir, true);
+
+            Assert.IsTrue(CompareFiles(sourceFiles, destinationFiles));
+        }
+
+        [TestMethod()]
+        public void CopySubDirsManyFilesThreaded()
+        {
+            const long min = 2048;
+            const long max = 2048 * 10;
+
+            DirectoryInfo sourceDir = new(Path.Combine(Directory.GetCurrentDirectory(), "source"));
+            DirectoryInfo destinationDir = new(Path.Combine(Directory.GetCurrentDirectory(), "source"));
+
+            ReCreateWorkingDir(sourceDir, destinationDir);
+            DirectoryInfo subDir = sourceDir.CreateSubdirectory("subDir");
+
+            CreateFiles(100, sourceDir, min, max);
+            CreateFiles(100, subDir, min, max);
+
+            SMAPR.CopyDirectory(sourceDir, destinationDir, false, false, true, true);
+
+            var sourceFiles = GetFiles(sourceDir, true);
+            var destinationFiles = GetFiles(destinationDir, true);
+
+            Assert.IsTrue(CompareFiles(sourceFiles, destinationFiles));
+        }
+
+        [TestMethod()]
+        public void CopyEmptySubDirsThreaded()
+        {
+            DirectoryInfo sourceDir = new(Path.Combine(Directory.GetCurrentDirectory(), "source"));
+            DirectoryInfo destinationDir = new(Path.Combine(Directory.GetCurrentDirectory(), "source"));
+
+            ReCreateWorkingDir(sourceDir, destinationDir);
+            for (int i = 0; i < 10; i++)
+                sourceDir.CreateSubdirectory($"subDir {i}");
+
+            SMAPR.CopyDirectory(sourceDir, destinationDir, false, false, true, true);
+
+            var sourceFiles = GetDirectories(sourceDir, true);
+            var destinationFiles = GetDirectories(destinationDir, true);
+
+            Assert.IsTrue(CompareDirs(sourceFiles, destinationFiles));
+        }
+
+        [TestMethod()]
+        public void CopyFileSync()
+        {
+            const long min = 2048;
+            const long max = 2048 * 10;
+
+            FileInfo file = new(Path.Combine(Directory.GetCurrentDirectory(), "file.txt"));
+            DirectoryInfo destinationDir = new(Path.Combine(Directory.GetCurrentDirectory(), "source"));
+
+            ReCreateWorkingDir(destinationDir);
+            CreateFile(file, min, max);
+
+            SMAPR.CopyFile(file, destinationDir, false);
+
+            var destinationFiles = GetFiles(destinationDir, false);
+
+            Assert.IsTrue(CompareFile(file, destinationFiles[0]));
+        }
+
+        private static bool CompareDirs(DirectoryInfo[] sourceDirs, DirectoryInfo[] copiedDirs)
+        {
+            if (sourceDirs.Length != copiedDirs.Length) return false;
+
+            for (int i = 0; i < sourceDirs.Length; i++)
+                if(!CompareDir(sourceDirs[i], copiedDirs[i])) return false;
+
+            return true;
+        }
+        private static bool CompareDir(DirectoryInfo sourceDirs, DirectoryInfo copiedDirs)
+        {
+            if (sourceDirs.Name != copiedDirs.Name) return false;
+            return true;
+        }
+        private static bool CompareFiles(FileInfo[] sourceFiles, FileInfo[] copiedFiles)
+        {
+            if (sourceFiles.Length != copiedFiles.Length) return false;
+
+            for(int i = 0; i < sourceFiles.Length; i++)
+                if (!CompareFile(sourceFiles[i], copiedFiles[i])) return false;
+
+            return true;
+        }
+        private static bool CompareFile(FileInfo sourceFile, FileInfo copiedFiled)
+        {
+            if (sourceFile.Length != copiedFiled.Length) return false;
+            return true;
+        }
+
+        private static void CreateFiles(int amount, DirectoryInfo sourceDir, long min, long max)
+        {
+            if (sourceDir.Exists)
+                sourceDir.Delete(true);
+
+            sourceDir.Create();
+
+            FileInfo[] sourceFiles = new FileInfo[amount];
+
+            for (int i = 0; i < amount; i++)
             {
-                SourceDir.CreateSubdirectory($"{i}");
+                sourceFiles[i] = new(Path.Combine(sourceDir.FullName, $"{i}.txt"));
+                CreateFile(sourceFiles[i], min, max);
+            }
+        }
+        private static void CreateFile(FileInfo file, long min, long max)
+        {
+            Random random = new();
+
+            FileStream fs = file.OpenWrite();
+            byte[] fileContent = new byte[random.NextInt64(min, max)];
+
+            for (int i = 0; i < fileContent.Length; i++)
+            {
+                fileContent[i] = (byte)random.Next(0, 256);
             }
 
-            // Backup Files
-            SMAPR.Backup(SourceDir.FullName, BackupDir.FullName, false, false);
-
-            // Validate
-            DirectoryInfo[] backupDirs = BackupDir.EnumerateDirectories().ToArray()[0].EnumerateDirectories().ToArray()[0].GetDirectories("*", new EnumerationOptions() { RecurseSubdirectories = true });
-            DirectoryInfo[] sourceDirs = SourceDir.GetDirectories();
-
-            if (backupDirs.Length != sourceDirs.Length)
-                Assert.Fail("SourceDirs and BackupDirs dont have the same Length");
-
-            for (int i = 0; i < backupDirs.Length; i++)
-            {
-                if (backupDirs[i].Name != sourceDirs[i].Name)
-                    Assert.Fail($"SourceDirs[{i}] does not have the same size as BackupDirs[{i}]");
-            }
-
-            // Delete Directories
-            ClearDirectories();
+            fs.Write(fileContent, 0, fileContent.Length);
+            fs.Close();
         }
 
-        private static void CreateFiles(FileInfo[] files)
+        private static void ReCreateWorkingDir(params DirectoryInfo[] ndirs)
         {
-            Random random = new(Seed);
-
-            foreach (FileInfo file in files)
+            foreach (DirectoryInfo dir in ndirs)
             {
-                FileStream fs = file.OpenWrite();
-                byte[] fileContent = new byte[random.NextInt64(MinimumFileSize, MaximumFileSize)];
-
-                for (int i = 0; i < fileContent.Length; i++)
-                {
-                    fileContent[i] = (byte)random.Next(0, 256);
-                }
-
-                fs.Write(fileContent, 0, fileContent.Length);
-                fs.Close();
+                if(dir.Exists)
+                    dir.Delete(true);
+                dir.Create();
             }
         }
-    
-        private void ClearDirectories()
-        {
-            SourceDir.Delete(true);
-            BackupDir.Delete(true);
-        }
-        private void CreateDirectories()
-        {
-            SourceDir.Create();
-            BackupDir.Create();
-        }
 
-        private static FileInfo[] GetFiles(DirectoryInfo dir)
+        private static FileInfo[] GetFiles(DirectoryInfo dir, bool recursive)
         {
-            return dir.GetFiles("*", new EnumerationOptions() { RecurseSubdirectories = true });
+            return dir.GetFiles("*", new EnumerationOptions() { RecurseSubdirectories = recursive });
+        }
+        private static DirectoryInfo[] GetDirectories(DirectoryInfo dir, bool recursive)
+        {
+            return dir.GetDirectories("*", new EnumerationOptions() { RecurseSubdirectories = recursive });
         }
     }
 }
