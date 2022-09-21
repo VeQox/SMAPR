@@ -1,13 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Diagnostics.SymbolStore;
-using System.Runtime.Serialization;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
-using System.Threading.Channels;
-
-namespace SMAPR
+﻿namespace SMAPR
 {
     public static class SMAPR
     {
