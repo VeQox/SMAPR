@@ -47,8 +47,25 @@ namespace SMAPR
             for (int i = 0; i < amount; i++)
             {
                 sourceFiles[i] = new(Path.Combine(sourceDir.FullName, $"{i}.txt"));
-                CreateFile(sourceFiles[i], min, max);
             }
+
+            Thread[] threads = new Thread[Environment.ProcessorCount];
+            for(int i = 0; i < threads.Length; i++)
+            {
+                int id = i;
+                threads[id] = new(() =>
+                {
+                    int from = (int)Math.Round((double)amount / threads.Length * id);
+                    int to = (int)Math.Round((double)amount / threads.Length * (id + 1));
+                    FileInfo[] files = sourceFiles[from..to];
+                    foreach(FileInfo file in files)
+                        CreateFile(file, min, max);
+                });
+                threads[id].Start();
+            }
+
+            foreach(Thread thread in threads)
+                thread.Join();
         }
         private static void CreateFile(FileInfo file, long min, long max)
         {

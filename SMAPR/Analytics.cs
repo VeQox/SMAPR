@@ -54,24 +54,22 @@ namespace SMAPR
             Console.Clear();
             PrintProgressBar();
             
-            Console.WriteLine($"\n{Files.Successful} Files copied");
-            Console.WriteLine($"{Files.Failed} Files failed\n\n");
-            Console.WriteLine($"Elapsed: {Watch.Elapsed.Hours:00}:{Watch.Elapsed.Minutes:00}:{Watch.Elapsed.Seconds:00}");
-            Console.WriteLine($"Total: {GetFileSize((long)Progress)}");
-            Console.WriteLine($"MB/s: {Math.Round(Progress / 1024 / 1024 / (Watch.ElapsedMilliseconds / 1000.0), 2)}\n");
+            Console.WriteLine($"\n{Files.Successful} Files copied" +
+                              $"\n{Files.Failed} Files failed\n\n" +
+                              $"\nElapsed: {Watch.Elapsed.Hours:00}:{Watch.Elapsed.Minutes:00}:{Watch.Elapsed.Seconds:00}" +
+                              $"\nTotal: {GetFileSize((long)Progress)}" +
+                              $"\nMB/s: {Math.Round(Progress / 1024 / 1024 / (Watch.ElapsedMilliseconds / 1000.0), 2)}\n");
         }
 
         private void PrintFileInfo(FileInfo file)
         {
-            Console.ForegroundColor = ConsoleColor.White;
-
-            Console.WriteLine($"Name: {file.Name}");
-            Console.WriteLine($"Path: {CapString(file.FullName, Console.BufferWidth - 6)}");
-            Console.WriteLine($"Size: {GetFileSize(file)}");
-            Console.WriteLine($"MB/s: {Math.Round(Progress / 1024 / 1024 / (Watch.ElapsedMilliseconds / 1000), 2)}");
-
-            Console.WriteLine($"\n{Files.Successful} Files copied");
-            Console.WriteLine($"{Files.Failed} Files failed");
+            Console.WriteLine($"Name: {file.Name}" +
+                              $"\nPath: {CapString(file.FullName, Console.BufferWidth - 6)}" +
+                              $"\nSize: {GetFileSize(file)}" +
+                              $"\nMB/s: {Math.Round(Progress / 1024 / 1024 / (Watch.ElapsedMilliseconds / 1000), 2)}" +
+                              $"\n" +
+                              $"\n{Files.Successful} Files copied" +
+                              $"\n{Files.Failed} Files failed");
         }
 
         private static string CapString(string longString, int length)
